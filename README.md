@@ -234,7 +234,4 @@ Les contributions sont les bienvenues! Veuillez ouvrir une issue ou soumettre un
 
 [MIT License](LICENSE)
 
-## Remerciements
 
-- [Lab Dassignies](https://lab.dassignies.fr/) pour l'accès à l'API Legifrance
-- Anthropic pour le protocole MCP et Claude
