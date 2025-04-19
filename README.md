@@ -118,6 +118,8 @@ Pour rechercher l'article 7 de la loi 78-17:
 ### 2. rechercher_code
 
 Recherche des articles dans les codes juridiques français.
+<img width="793" alt="image" src="https://github.com/user-attachments/assets/9af3dd26-cef1-4859-b4b4-55bcfaeb0d4f" />
+
 
 **Paramètres:**
 - **search**: Termes de recherche
