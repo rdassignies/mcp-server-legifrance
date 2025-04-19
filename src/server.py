@@ -39,8 +39,9 @@ logger = logging.getLogger("legifrance_mcp")
 load_dotenv()
 
 # Constantes et configuration
-API_KEY = os.getenv('LAB_DASSIGNIES_API_KEY')
-API_URL = os.getenv('LEGAL_API_URL')
+API_KEY = os.getenv('DEV_API_KEY')
+API_URL = os.getenv('DEV_API_URL')
+
 if not API_KEY or not API_URL:
     raise ValueError("Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies")
 
@@ -125,24 +126,40 @@ async def make_api_request(endpoint: str, data: Dict) -> Dict:
             timeout=30  # Timeout explicite pour éviter les blocages
         )
         
-        res.raise_for_status()  # Lève une exception pour les codes d'erreur HTTP
+
+        content_type = res.headers.get("Content-Type", "")
+        response_body = res.text      
         
         if res.ok:
-            result = res.json()
-            result += "\n\n🔗 Mentionne systématiquement le lien officiel dans ta réponse pour pouvoir y accéder."
+            try:
+                result = res.json()
+            except requests.exceptions.JSONDecodeError:
+                result = response_body  # fallback sur le texte brut
+
+            if isinstance(result, str):
+                result += "\n\n🔗 Mentionne systématiquement le lien officiel dans ta réponse pour pouvoir y accéder."
             return result
         
+        if res.status_code == 422 or res.status_code == 404:
+            if "text/plain" in content_type:
+                return {"error": response_body}
+        
+        if "application/json" in content_type:
+           try:
+               return {"error": res.json()}
+           except requests.exceptions.JSONDecodeError:
+               return {"error": response_body}
+        
+        return {"error": f"Erreur {res.status_code} : {response_body}"}
+            
     except requests.exceptions.RequestException as e:
-        error_msg = f"❌ Erreur de requête API: {str(e)}"
-        if hasattr(e, 'response') and e.response:
-            error_msg += f" - Code: {e.response.status_code}, Message: {e.response.text}"
-        logger.error(error_msg)
-        return {"error": error_msg}
+        logger.error("Erreur de connexion à l'API", exc_info=True)
+        return {"error": f"Erreur de connexion : {e}"}
         
     except Exception as e:
-        error_msg = f"⚠️ Erreur inattendue: {str(e)}"
-        logger.error(error_msg)
-        return {"error": error_msg}
+        # Uniquement pour les erreurs de connexion ou autres problèmes graves
+        logger.error(f"Erreur de connexion: {str(e)}")
+        return {"error": f"Erreur de connexion: {str(e)}"}
 
 @server.list_tools()
 async def list_tools() -> List[Tool]:
@@ -219,10 +236,16 @@ async def list_tools() -> List[Tool]:
                 - sort: Tri des résultats ("PERTINENCE", "DATE_DESC", "DATE_ASC")
                 - champ: Champ de recherche ("ALL", "TITLE", "ABSTRATS", "TEXTE", "RESUMES", "NUM_AFFAIRE")
                 - type_recherche: Type de recherche
-                - page_size: Nombre de résultats (max 100)
+                - page_size: Nombre de résultats (max. 100)
                 - fetch_all: Récupérer tous les résultats
-                - juri_keys: Mots-clés juridiques spécifiques
-                - juridiction_judiciaire: Liste des juridictions à inclure
+                - juri_keys: Mots-clés pour extraire des champs comme 'titre'. Par défaut, le titre, le texte et les résumés sont extraits
+                - juridiction_judiciaire: Liste des juridictions à inclure parmi ['Cour de cassation', 'Juridictions d'appel', ]
+            
+            Exemples : 
+                - Obtenir un panorama de la jurisprudence par mots clés : 
+                    search = "tierce opposition salarié société liquidation", page_size=100, juri_keys=['titre']
+                - Obtenir toutes les jurisprudences sur la signature électronique : 
+                    search = "signature électronique", fetch_all=True, juri_keys=['titre', 'sommaire']
             
             """,
             inputSchema={

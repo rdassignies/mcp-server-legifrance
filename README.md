@@ -1,12 +1,30 @@
 # mcp-server-legifrance
 
-Serveur MCP (Model Context Protocol)[https://modelcontextprotocol.io/introduction] permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
+Serveur MCP [Model Context Protocol] - (https://modelcontextprotocol.io/introduction) permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
 
 ## Description
 
 Ce projet implémente un serveur MCP qui permet d'accéder aux ressources juridiques françaises (textes légaux, codes, jurisprudence) directement depuis un Large Language Model. Il facilite les recherches juridiques en rendant les données de Legifrance accessibles via des outils interactifs.
 
 Il faut suite à la création du package [pylegifrance](https://github.com/rdassignies/pylegifrance). 
+
+### Qu'est-ce que le MCP ?
+
+Le Model Context Protocol (MCP) est un protocole standardisé développé par Anthropic qui permet aux modèles de langage comme Claude d'interagir de manière structurée avec des outils et services externes. Il s'agit d'une avancée majeure dans l'interopérabilité des LLMs car il établit un cadre commun pour l'échange de données et l'exécution de fonctions entre les modèles et les API tierces.
+
+### L'interopérabilité via MCP
+
+L'importance du MCP réside dans sa capacité à créer une interface standardisée entre les LLMs et les systèmes externes. Cette standardisation présente plusieurs avantages :
+
+1. **Architecture modulaire** : Les développeurs peuvent créer des outils spécialisés qui sont facilement intégrables à différents LLMs compatibles avec le protocole.
+
+2. **Sécurité accrue** : Le MCP limite l'accès des modèles aux seules fonctionnalités explicitement définies, réduisant ainsi les risques de sécurité.
+
+3. **Maintenance simplifiée** : Les mises à jour des outils externes peuvent être faites indépendamment du modèle, facilitant l'évolution des systèmes.
+
+4. **Extension des capacités** : Les LLMs peuvent accéder à des données en temps réel et exécuter des opérations complexes qu'ils ne pourraient pas réaliser seuls.
+
+L'idée est d'utiliser la puissance des modèles de langage comme Claude pour effectuer des traitements sur des contenus juridiques officiels via Legifrance et, à terme, d'autres bases de données officiels comme le RNE, le BODACC, etc. Les résultats sont très prometteurs et permettent de palier les problèmes liés par la recherche statistique classique de Légifrance. Le service est en constante améliorations mais vous pouvez voir quelques exemples de recherches infra. 
 
 Le serveur prend en charge les fonctionnalités suivantes:
 - Recherche dans les textes légaux (lois, ordonnances, décrets, arrêtés)
