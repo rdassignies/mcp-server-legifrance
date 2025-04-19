@@ -11,6 +11,9 @@ Le serveur prend en charge les fonctionnalités suivantes:
 - Consultation des articles de codes juridiques français
 - Recherche dans la jurisprudence judiciaire
 
+Les autres fonds Legifrance seront bientôt implémentés. 
+
+
 ## Prérequis
 
 - Python 3.9+
@@ -21,7 +24,7 @@ Le serveur prend en charge les fonctionnalités suivantes:
 
 1. Clonez ce dépôt:
 ```bash
-git clone https://github.com/votre-username/mcp-server-legifrance.git
+git clone https://github.com/rdassignies/mcp-server-legifrance.git
 cd mcp-server-legifrance
 ```
 
@@ -141,9 +144,21 @@ Pour rechercher des informations sur le PACS dans le Code civil:
 
 ### 3. rechercher_jurisprudence_judiciaire
 
-Recherche dans la base de jurisprudence judiciaire.
+Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissance des modèles de langage pour faire des recherches de jurisprudences directement dans Legifrance. 
+
+** Exemple 1 ** Panorama des dernières jp sur un thème particulier (ex. "Trouve moi les dernières jp sur la rupture brutale des relations commerciales établies et rédige moi un tableau de synthèse" ). 
 
 <img width="1456" alt="image" src="https://github.com/user-attachments/assets/e5d77948-7ddf-434c-be31-24feacbfbb22" />
+
+** Exemple 2 ** A partir d'une décision particulière connu (numéro de pourvoi 23-23.382), on peut faire des analyses par étapes : 
+1. On trouve l'arrêt et Claude génère la fiche d'arrêt
+2. On lui demande d'extraire les articles visés et de les trouver dans Legifrance
+3. On lui demande de trouver des jp similaires
+4. etc ...
+
+![image](https://github.com/user-attachments/assets/306724b7-5a42-41c2-9b96-ac591d8880b9)
+
+
 
 
 **Paramètres:**
