@@ -6,6 +6,8 @@ Serveur MCP (Model Context Protocol) permettant d'interroger les bases juridique
 
 Ce projet implémente un serveur MCP qui permet d'accéder aux ressources juridiques françaises (textes légaux, codes, jurisprudence) directement depuis un Large Language Model. Il facilite les recherches juridiques en rendant les données de Legifrance accessibles via des outils interactifs.
 
+Il faut suite à la création du package pylegifrance 
+
 Le serveur prend en charge les fonctionnalités suivantes:
 - Recherche dans les textes légaux (lois, ordonnances, décrets, arrêtés)
 - Consultation des articles de codes juridiques français
