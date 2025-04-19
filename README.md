@@ -1,0 +1,220 @@
+# mcp-server-legifrance
+
+Serveur MCP (Model Context Protocol) permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
+
+## Description
+
+Ce projet implémente un serveur MCP qui permet d'accéder aux ressources juridiques françaises (textes légaux, codes, jurisprudence) directement depuis un Large Language Model. Il facilite les recherches juridiques en rendant les données de Legifrance accessibles via des outils interactifs.
+
+Le serveur prend en charge les fonctionnalités suivantes:
+- Recherche dans les textes légaux (lois, ordonnances, décrets, arrêtés)
+- Consultation des articles de codes juridiques français
+- Recherche dans la jurisprudence judiciaire
+
+## Prérequis
+
+- Python 3.9+
+- Clé API pour Legifrance (à obtenir auprès de [Lab Dassignies](https://lab.dassignies.fr/))
+- Un modèle compatible avec le protocole MCP (comme Claude via l'API Anthropic)
+
+## Installation
+
+1. Clonez ce dépôt:
+```bash
+git clone https://github.com/votre-username/mcp-server-legifrance.git
+cd mcp-server-legifrance
+```
+
+2. Créez un environnement virtuel et activez-le:
+```bash
+python -m venv venv
+source venv/bin/activate  # Sur Windows: venv\Scripts\activate
+```
+
+3. Installez les dépendances:
+```bash
+pip install -r requirements.txt
+```
+
+4. Créez un fichier `.env` à la racine du projet avec vos identifiants:
+```
+LAB_DASSIGNIES_API_KEY=votre_clé_api
+LEGAL_API_URL=https://api.legifrance.fr/  # ou l'URL correspondante
+```
+
+## Utilisation
+
+### Démarrage du serveur
+
+Pour démarrer le serveur MCP:
+
+```bash
+python legifrance_server.py
+```
+
+### Intégration avec Claude
+
+1. Assurez-vous d'avoir un compte développeur Anthropic avec accès à l'API Claude.
+
+2. Utilisez le SDK Python d'Anthropic pour intégrer le serveur MCP. Voici un exemple d'utilisation:
+
+```python
+import anthropic
+from anthropic.tools import Tool
+import subprocess
+import json
+
+# Démarrer le serveur MCP en arrière-plan
+mcp_process = subprocess.Popen(["python", "legifrance_server.py"])
+
+# Configurer le client Anthropic
+client = anthropic.Anthropic(api_key="votre-clé-api-anthropic")
+
+# Définir les outils disponibles
+tools = [
+    Tool.from_mcp(name="legifrance", server_command=["python", "legifrance_server.py"])
+]
+
+# Exemple de conversation avec Claude utilisant les outils MCP
+message = client.messages.create(
+    model="claude-3-opus-20240229",
+    max_tokens=1000,
+    system="Vous êtes un assistant juridique spécialisé en droit français.",
+    messages=[
+        {"role": "user", "content": "Que dit le Code civil sur le mariage?"}
+    ],
+    tools=tools
+)
+
+print(message.content)
+
+# Arrêter le serveur MCP
+mcp_process.terminate()
+```
+
+## Outils disponibles
+
+### 1. rechercher_dans_texte_legal
+
+Recherche des articles dans les textes légaux (lois, ordonnances, décrets, arrêtés).
+
+**Paramètres:**
+- **text_id**: Identifiant du texte (ex: "78-17" pour la loi informatique et libertés)
+- **search**: Mots-clés ou numéro d'article
+- **champ**: Zone de recherche ("ALL", "TITLE", "TABLE", "NUM_ARTICLE", "ARTICLE")
+- **type_recherche**: Mode de recherche ("TOUS_LES_MOTS_DANS_UN_CHAMP", "EXPRESSION_EXACTE", "AU_MOINS_UN_MOT")
+- **page_size**: Nombre de résultats (max 100)
+
+**Exemple:**
+Pour rechercher l'article 7 de la loi 78-17:
+```
+{
+  "text_id": "78-17",
+  "search": "7",
+  "champ": "NUM_ARTICLE"
+}
+```
+
+### 2. rechercher_code
+
+Recherche des articles dans les codes juridiques français.
+
+**Paramètres:**
+- **search**: Termes de recherche
+- **code_name**: Nom du code (ex: "Code civil", "Code du travail")
+- **champ**: Zone de recherche
+- **sort**: Tri des résultats
+- **type_recherche**: Mode de recherche
+- **page_size**: Nombre de résultats
+- **fetch_all**: Si tous les résultats doivent être récupérés
+
+**Exemple:**
+Pour rechercher des informations sur le PACS dans le Code civil:
+```
+{
+  "search": "pacte civil de solidarité",
+  "code_name": "Code civil"
+}
+```
+
+### 3. rechercher_jurisprudence_judiciaire
+
+Recherche dans la base de jurisprudence judiciaire.
+
+**Paramètres:**
+- **search**: Termes ou numéro d'affaire
+- **publication_bulletin**: Si publiée au bulletin ["T"] ou non ["F"]
+- **sort**: Tri des résultats
+- **champ**: Zone de recherche
+- **type_recherche**: Mode de recherche
+- **page_size**: Nombre de résultats
+- **fetch_all**: Si tous les résultats doivent être récupérés
+- **juri_keys**: Mots-clés juridiques
+- **juridiction_judiciaire**: Liste des juridictions
+
+**Exemple:**
+Pour rechercher des décisions sur la "légitime défense":
+```
+{
+  "search": "légitime défense"
+}
+```
+
+## Prompts prédéfinis
+
+Le serveur inclut des prompts prédéfinis pour faciliter l'utilisation:
+
+### agent_juridique_expert
+
+Crée un agent juridique expert qui:
+- Cite systématiquement ses sources
+- Utilise les outils pertinents pour rechercher des informations
+- Fournit des analyses étape par étape
+- Inclut les liens officiels vers les textes juridiques
+
+**Usage:**
+```python
+# Exemple d'utilisation du prompt prédéfini
+response = client.messages.create(
+    model="claude-3-opus-20240229",
+    max_tokens=1000,
+    tools=tools,
+    messages=[
+        {
+            "role": "user", 
+            "content": [
+                {
+                    "type": "tool_use",
+                    "id": "prompt_use_1",
+                    "name": "legifrance.get_prompt",
+                    "input": {
+                        "prompt_name": "agent_juridique_expert",
+                        "inputs": {
+                            "question": "Quelles sont les conditions de validité d'un contrat de mariage?"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+)
+```
+
+## Limitations
+
+- Les requêtes sont limitées à 5 par seconde pour respecter les limites de l'API
+- Une connexion internet est nécessaire pour accéder aux bases juridiques
+- Le serveur ne met pas en cache les résultats, chaque requête interroge l'API
+
+## Contribution
+
+Les contributions sont les bienvenues! Veuillez ouvrir une issue ou soumettre une pull request pour toute amélioration ou correction.
+
+## Licence
+
+[MIT License](LICENSE)
+
+## Remerciements
+
+- [Lab Dassignies](https://lab.dassignies.fr/) pour l'accès à l'API Legifrance
+- Anthropic pour le protocole MCP et Claude
