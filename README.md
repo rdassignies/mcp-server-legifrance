@@ -1,12 +1,12 @@
 # mcp-server-legifrance
 
-Serveur MCP (Model Context Protocol) permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
+Serveur MCP (Model Context Protocol)[https://modelcontextprotocol.io/introduction] permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
 
 ## Description
 
 Ce projet implémente un serveur MCP qui permet d'accéder aux ressources juridiques françaises (textes légaux, codes, jurisprudence) directement depuis un Large Language Model. Il facilite les recherches juridiques en rendant les données de Legifrance accessibles via des outils interactifs.
 
-Il faut suite à la création du package pylegifrance 
+Il faut suite à la création du package [pylegifrance](https://github.com/rdassignies/pylegifrance). 
 
 Le serveur prend en charge les fonctionnalités suivantes:
 - Recherche dans les textes légaux (lois, ordonnances, décrets, arrêtés)
@@ -15,6 +15,8 @@ Le serveur prend en charge les fonctionnalités suivantes:
 
 Les autres fonds Legifrance seront bientôt implémentés. 
 
+Si vous souhaitez accéder directement à l'API Legifrance pour connecter votre propre serveur MCP, 
+c'est par ici : [https://lab.dassignies.law](https://lab.dassignies.law/api/docs) ou [linkedin](https://fr.linkedin.com/in/dassignies)
 
 ## Prérequis
 
@@ -148,11 +150,11 @@ Pour rechercher des informations sur le PACS dans le Code civil:
 
 Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissance des modèles de langage pour faire des recherches de jurisprudences directement dans Legifrance. 
 
-** Exemple 1 ** Panorama des dernières jp sur un thème particulier (ex. "Trouve moi les dernières jp sur la rupture brutale des relations commerciales établies et rédige moi un tableau de synthèse" ). 
+**Exemple 1** Panorama des dernières jp sur un thème particulier (ex. "Trouve moi les dernières jp sur la rupture brutale des relations commerciales établies et rédige moi un tableau de synthèse" ). 
 
 <img width="1456" alt="image" src="https://github.com/user-attachments/assets/e5d77948-7ddf-434c-be31-24feacbfbb22" />
 
-** Exemple 2 ** A partir d'une décision particulière connu (numéro de pourvoi 23-23.382), on peut faire des analyses par étapes : 
+**Exemple 2** A partir d'une décision particulière connu (numéro de pourvoi 23-23.382), on peut faire des analyses par étapes : 
 1. On trouve l'arrêt et Claude génère la fiche d'arrêt
 2. On lui demande d'extraire les articles visés et de les trouver dans Legifrance
 3. On lui demande de trouver des jp similaires
