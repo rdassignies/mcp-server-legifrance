@@ -10,7 +10,7 @@ Il faut suite à la création du package [pylegifrance](https://github.com/rdass
 
 ### Qu'est-ce que le MCP ?
 
-Le Model Context Protocol (MCP) est un protocole standardisé développé par Anthropic qui permet aux modèles de langage comme Claude d'interagir de manière structurée avec des outils et services externes. Il s'agit d'une avancée majeure dans l'interopérabilité des LLMs car il établit un cadre commun pour l'échange de données et l'exécution de fonctions entre les modèles et les API tierces.
+Le Model Context Protocol (MCP) est un protocole standardisé développé par Anthropic qui permet aux modèles de langage comme Claude d'interagir de manière structurée avec des outils et services externes. Il s'agit d'une avancée intéressante dans l'interopérabilité des LLMs car il établit un cadre commun pour l'échange de données et l'exécution de fonctions entre les modèles et les API tierces. Jusqu'à maintenant, il fallait développer, pour chaque service, des appels de fonctions spécifiques. 
 
 ### L'interopérabilité via MCP
 
@@ -24,7 +24,9 @@ L'importance du MCP réside dans sa capacité à créer une interface standardis
 
 4. **Extension des capacités** : Les LLMs peuvent accéder à des données en temps réel et exécuter des opérations complexes qu'ils ne pourraient pas réaliser seuls.
 
-L'idée est d'utiliser la puissance des modèles de langage comme Claude pour effectuer des traitements sur des contenus juridiques officiels via Legifrance et, à terme, d'autres bases de données officiels comme le RNE, le BODACC, etc. Les résultats sont très prometteurs et permettent de palier les problèmes liés par la recherche statistique classique de Légifrance. Le service est en constante améliorations mais vous pouvez voir quelques exemples de recherches infra. 
+### mcp-server-legifrance ? 
+
+L’idée est d’exploiter la puissance des modèles de langage comme Claude pour effectuer des traitements sur des contenus juridiques officiels via Légifrance, et à terme, d’autres bases de données publiques comme le RNE, le BODACC, etc. Les premiers résultats sont très prometteurs et permettent de pallier certaines limites de la recherche statistique classique proposée par Légifrance. Le service est en amélioration continue, mais vous pouvez déjà consulter quelques exemples de recherches ci-dessous.
 
 Le serveur prend en charge les fonctionnalités suivantes:
 - Recherche dans les textes légaux (lois, ordonnances, décrets, arrêtés)
@@ -39,83 +41,67 @@ c'est par ici : [https://lab.dassignies.law](https://lab.dassignies.law/api/docs
 ## Prérequis
 
 - Python 3.9+
-- Clé API pour Legifrance (à obtenir auprès de [Lab Dassignies](https://lab.dassignies.fr/))
+- Clé API pour Legifrance (à obtenir auprès de [lab.dassignies.law](https://lab.dassignies.fr/))
 - Un modèle compatible avec le protocole MCP (comme Claude via l'API Anthropic)
 
 ## Installation
 
-1. Clonez ce dépôt:
+3. Créez un environnement virtuel et activez-le:
 ```bash
-git clone https://github.com/rdassignies/mcp-server-legifrance.git
-cd mcp-server-legifrance
-```
-
-2. Créez un environnement virtuel et activez-le:
-```bash
-python -m venv venv
+python -m venv venv 
 source venv/bin/activate  # Sur Windows: venv\Scripts\activate
 ```
-
-3. Installez les dépendances:
 ```bash
-pip install -r requirements.txt
+uv venv .venv 
+source .venv/bin/activate  # Sur Windows: venv\Scripts\activate
 ```
+2. Installer via pip:
+```bash
+pip install git+https://github.com/rdassignies/mcp-server-legifrance.git
+```
+
+3. Installer via uv
+```bash
+uv pip install git+https://github.com/rdassignies/mcp-server-legifrance.git
+```
+
 
 4. Créez un fichier `.env` à la racine du projet avec vos identifiants:
 ```
 LAB_DASSIGNIES_API_KEY=votre_clé_api
-LEGAL_API_URL=https://api.legifrance.fr/  # ou l'URL correspondante
+LEGAL_API_URL=https://lab.dassignies.law/api/ # ou l'URL correspondante
 ```
 
 ## Utilisation
 
-### Démarrage du serveur
-
-Pour démarrer le serveur MCP:
-
-```bash
-python legifrance_server.py
-```
 
 ### Intégration avec Claude
 
-1. Assurez-vous d'avoir un compte développeur Anthropic avec accès à l'API Claude.
+C'est l'intégration la plus "simple". 
 
-2. Utilisez le SDK Python d'Anthropic pour intégrer le serveur MCP. Voici un exemple d'utilisation:
+
+1. Utilisez le fichier de configuration suivant pour intégrer le serveur MCP dans Claude Desktop. 
+Pour trouver ce fichier, il faut aller dans paramètres>Développeur>modifier la configuration (renvoie vers le fichier de configuration au format .json). 
+
+Il existe également une procédure à la ligne de commande via uv qui sera documentée ultérieurement. 
+
+Voici un exemple d'utilisation:
 
 ```python
-import anthropic
-from anthropic.tools import Tool
-import subprocess
-import json
+{
+  "mcpServers": {
+    "legifrance": {
+      "command": "<CHEMIN_VERS_VOTRE_REP>/mcp-server-legifrance/venv/bin/python",
+            "args": [
+                "<CHEMIN_VERS_VOTRE_REP>/mcp-server-legifrance/src/server.py"
+		]
 
-# Démarrer le serveur MCP en arrière-plan
-mcp_process = subprocess.Popen(["python", "legifrance_server.py"])
-
-# Configurer le client Anthropic
-client = anthropic.Anthropic(api_key="votre-clé-api-anthropic")
-
-# Définir les outils disponibles
-tools = [
-    Tool.from_mcp(name="legifrance", server_command=["python", "legifrance_server.py"])
-]
-
-# Exemple de conversation avec Claude utilisant les outils MCP
-message = client.messages.create(
-    model="claude-3-opus-20240229",
-    max_tokens=1000,
-    system="Vous êtes un assistant juridique spécialisé en droit français.",
-    messages=[
-        {"role": "user", "content": "Que dit le Code civil sur le mariage?"}
-    ],
-    tools=tools
-)
-
-print(message.content)
-
-# Arrêter le serveur MCP
-mcp_process.terminate()
+    }
+  }
+}
 ```
+2. Démarrer Claude desktop, vous devez voir apparaître des icônes outils : 
+![alt text](image.png)
 
 ## Outils disponibles
 
@@ -181,8 +167,6 @@ Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissanc
 ![image](https://github.com/user-attachments/assets/306724b7-5a42-41c2-9b96-ac591d8880b9)
 
 
-
-
 **Paramètres:**
 - **search**: Termes ou numéro d'affaire
 - **publication_bulletin**: Si publiée au bulletin ["T"] ou non ["F"]
@@ -194,13 +178,7 @@ Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissanc
 - **juri_keys**: Mots-clés juridiques
 - **juridiction_judiciaire**: Liste des juridictions
 
-**Exemple:**
-Pour rechercher des décisions sur la "légitime défense":
-```
-{
-  "search": "légitime défense"
-}
-```
+
 
 ## Prompts prédéfinis
 
