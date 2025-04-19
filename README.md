@@ -141,6 +141,9 @@ Pour rechercher des informations sur le PACS dans le Code civil:
 
 Recherche dans la base de jurisprudence judiciaire.
 
+<img width="1456" alt="image" src="https://github.com/user-attachments/assets/e5d77948-7ddf-434c-be31-24feacbfbb22" />
+
+
 **Paramètres:**
 - **search**: Termes ou numéro d'affaire
 - **publication_bulletin**: Si publiée au bulletin ["T"] ou non ["F"]
