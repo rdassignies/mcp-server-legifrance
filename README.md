@@ -42,7 +42,7 @@ c'est par ici : [https://lab.dassignies.law](https://lab.dassignies.law/api/docs
 
 - Python 3.9+
 - Clé API pour Legifrance (à obtenir auprès de [lab.dassignies.law](https://lab.dassignies.fr/))
-- Un modèle compatible avec le protocole MCP (comme Claude via l'API Anthropic)
+- Un modèle compatible avec le protocole MCP (comme Claude desktop)
 
 ## Installation
 
@@ -188,7 +188,7 @@ Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissanc
 
 Le serveur peut inclure des prompts prédéfinis pour faciliter l'utilisation. 
 Pour le moment, seul un prompt a été implémenté à titre d'exemple. Il est possible de mettre en place des prompts beaucoup plus 
-détaillé notamment pour effectuer des opérations de type *deepsearch*. 
+détaillés notamment pour effectuer des opérations de type *deepsearch* ou des extractions dans plusieurs documents ... 
 
 ### agent_juridique_expert
 
@@ -239,5 +239,3 @@ Les contributions sont les bienvenues! Veuillez ouvrir une issue ou soumettre un
 ## Licence
 
 [MIT License](LICENSE)
-
-
