@@ -116,6 +116,8 @@ Recherche des articles dans les textes légaux (lois, ordonnances, décrets, arr
 - **type_recherche**: Mode de recherche ("TOUS_LES_MOTS_DANS_UN_CHAMP", "EXPRESSION_EXACTE", "AU_MOINS_UN_MOT")
 - **page_size**: Nombre de résultats (max 100)
 
+Pour les détails, cf [https://lab.dassignies.law/api/docs](https://lab.dassignies.law/api/docs)
+
 **Exemple:**
 Pour rechercher l'article 7 de la loi 78-17:
 ```
@@ -152,6 +154,7 @@ Pour rechercher des informations sur le PACS dans le Code civil, le modèle de l
   "code_name": "Code civil"
 }
 ```
+Pour les détails, cf [https://lab.dassignies.law/api/docs](https://lab.dassignies.law/api/docs)
 
 ### 3. rechercher_jurisprudence_judiciaire
 
@@ -179,10 +182,10 @@ Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissanc
 - **type_recherche**: Mode de recherche
 - **page_size**: Nombre de résultats
 - **fetch_all**: Si tous les résultats doivent être récupérés
-- **juri_keys**: Mots-clés juridiques
+- **juri_keys**: Champs de réponse à extraire 
 - **juridiction_judiciaire**: Liste des juridictions
 
-
+Pour les détails, cf [https://lab.dassignies.law/api/docs](https://lab.dassignies.law/api/docs)
 
 ## Prompts prédéfinis
 
