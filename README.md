@@ -1,6 +1,6 @@
 # mcp-server-legifrance
 
-Serveur MCP [Model Context Protocol] - (https://modelcontextprotocol.io/introduction) permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
+Serveur MCP [Model Context Protocol](https://modelcontextprotocol.io/introduction) permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
 
 ## Description
 
@@ -129,6 +129,9 @@ Pour rechercher l'article 7 de la loi 78-17:
 ### 2. rechercher_code
 
 Recherche des articles dans les codes juridiques français.
+
+Par ex. "Rédige moi une synthèse sur le régime juridique du PACS"
+
 <img width="793" alt="image" src="https://github.com/user-attachments/assets/9af3dd26-cef1-4859-b4b4-55bcfaeb0d4f" />
 
 
@@ -142,7 +145,7 @@ Recherche des articles dans les codes juridiques français.
 - **fetch_all**: Si tous les résultats doivent être récupérés
 
 **Exemple:**
-Pour rechercher des informations sur le PACS dans le Code civil:
+Pour rechercher des informations sur le PACS dans le Code civil, le modèle de langage va envoyer la requête suivante : 
 ```
 {
   "search": "pacte civil de solidarité",
@@ -164,6 +167,7 @@ Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissanc
 3. On lui demande de trouver des jp similaires
 4. etc ...
 
+
 ![image](https://github.com/user-attachments/assets/306724b7-5a42-41c2-9b96-ac591d8880b9)
 
 
@@ -182,7 +186,9 @@ Recherche dans la base de jurisprudence judiciaire. On peut utiliser la puissanc
 
 ## Prompts prédéfinis
 
-Le serveur inclut des prompts prédéfinis pour faciliter l'utilisation:
+Le serveur peut inclure des prompts prédéfinis pour faciliter l'utilisation. 
+Pour le moment, seul un prompt a été implémenté à titre d'exemple. Il est possible de mettre en place des prompts beaucoup plus 
+détaillé notamment pour effectuer des opérations de type *deepsearch*. 
 
 ### agent_juridique_expert
 
@@ -222,7 +228,7 @@ response = client.messages.create(
 
 ## Limitations
 
-- Les requêtes sont limitées à 5 par seconde pour respecter les limites de l'API
+- Les requêtes sont limitées à 10 par seconde pour respecter les limites de l'API
 - Une connexion internet est nécessaire pour accéder aux bases juridiques
 - Le serveur ne met pas en cache les résultats, chaque requête interroge l'API
 
