@@ -137,7 +137,7 @@ async def make_api_request(endpoint: str, data: Dict) -> Dict:
                 result = response_body  # fallback sur le texte brut
 
             if isinstance(result, str):
-                result += "\n\n🔗 Mentionne systématiquement le lien officiel dans ta réponse pour pouvoir y accéder."
+                result += "\n\n🔗 Mentionne systématiquement et impérativement le lien officiel dans ta réponse pour pouvoir y accéder."
             return result
         
         if res.status_code == 422 or res.status_code == 404:
@@ -246,6 +246,8 @@ async def list_tools() -> List[Tool]:
                     search = "tierce opposition salarié société liquidation", page_size=100, juri_keys=['titre']
                 - Obtenir toutes les jurisprudences sur la signature électronique : 
                     search = "signature électronique", fetch_all=True, juri_keys=['titre', 'sommaire']
+                - Obtenir les 20 dernières jurisprudences sur la signature électronique des juridictions d'appel
+                 search = "signature électronique", page_size, sort='DATE_DESC', juridiction_judiciaire=['Juridictions d'appel']]
             
             """,
             inputSchema={
@@ -308,6 +310,25 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
         error_message = f"Erreur lors de l'exécution de {name}: {str(e)}"
         logger.error(error_message)
         return [TextContent(type="text", text=error_message)]
+
+@server.list_prompts()
+async def list_prompts():
+    """Liste tous les prompts disponibles dans ce serveur MCP."""
+    from mcp.types import Prompt, PromptArgument
+    
+    return [
+        Prompt(
+            name="agent_juridique_expert",
+            description="Utilise un agent juridique expert pour répondre à des questions de droit français",
+            arguments=[
+                PromptArgument(
+                    name="question",
+                    description="La question juridique",
+                    required=True
+                )
+            ]
+        )
+    ]
 
 @server.get_prompt()
 async def get_prompt(prompt_name: str, inputs: dict) -> Dict:
