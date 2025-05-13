@@ -1,6 +1,6 @@
 # mcp-server-legifrance
 
-Serveur MCP [Model Context Protocol](https://modelcontextprotocol.io/introduction) permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
+Serveur MCP [Model Context Protocol](https://modelcontextprotocol.io/introduction) expérimental permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
 
 ## Description
 
