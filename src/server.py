@@ -39,8 +39,8 @@ logger = logging.getLogger("legifrance_mcp")
 load_dotenv()
 
 # Constantes et configuration
-API_KEY = os.getenv('DEV_API_KEY')
-API_URL = os.getenv('DEV_API_URL')
+API_KEY = os.getenv('DASSIGNIES_API_KEY')
+API_URL = os.getenv('DASSIGNIES_API_URL')
 
 if not API_KEY or not API_URL:
     raise ValueError("Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies")

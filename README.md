@@ -68,9 +68,11 @@ uv pip install git+https://github.com/rdassignies/mcp-server-legifrance.git
 
 4. Créez un fichier `.env` à la racine du projet avec vos identifiants:
 ```
-LAB_DASSIGNIES_API_KEY=votre_clé_api
-LEGAL_API_URL=https://lab.dassignies.law/api/ # ou l'URL correspondante
+DASSIGNIES_API_KEY=votre_clé_api
+DASSIGNIES_API_URL=https://lab.dassignies.law/api/ # ou l'URL correspondante
 ```
+
+Pour obtenir vos clés API de test, merci de me contacter via  [LinkedIn](https://www.linkedin.com/in/dassignies/) 
 
 ## Utilisation
 
