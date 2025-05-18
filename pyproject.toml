@@ -12,3 +12,17 @@ dependencies = [
     "requests>=2.32.3",
     "load-dotenv>=0.1.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-timeout>=2.2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "timeout: mark test to timeout after given seconds",
+]
