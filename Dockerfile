@@ -19,6 +19,8 @@ FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
+EXPOSE 8000
+
 COPY --from=uv /app/.venv /app/.venv
 COPY --from=uv /app/src /app/src
 

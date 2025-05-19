@@ -1,6 +1,7 @@
 import pytest
+import httpx
 from mcp import ClientSession
-from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamablehttp_client
 
 TOOL_NAMES = {
     "rechercher_dans_texte_legal",
@@ -8,16 +9,24 @@ TOOL_NAMES = {
     "rechercher_jurisprudence_judiciaire",
 }
 
-
 @pytest.mark.asyncio
-@pytest.mark.timeout(30)
 async def test_server_returns_three_tools(server):
-    """
-    Ensure the mcp server returns exactly the expected three tools.
-    """
-    async with stdio_client(server) as (read_stream, write_stream):
-        async with ClientSession(read_stream, write_stream) as session:
+    mcp_url = f"{server['url']}/mcp/"
+    async with streamablehttp_client(url=mcp_url) as (r, w, _):
+        async with ClientSession(r, w) as session:
             await session.initialize()
             await session.send_ping()
             tools = await session.list_tools()
-            assert len(tools.tools) == 3
+            assert {t.name for t in tools.tools} == TOOL_NAMES
+
+@pytest.mark.asyncio
+async def test_ping_endpoint(server):
+    """Test that the ping endpoint returns a 200 OK response with the expected JSON payload."""
+    # Get the base URL from the server fixture
+    base_url = server["url"]
+    ping_url = f"{base_url}/ping"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(ping_url)
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}

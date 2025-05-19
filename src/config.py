@@ -78,9 +78,9 @@ class RetryConfig:
 class MCPServerConfig:
     """MCP server configuration."""
     transport: Literal["stdio", "streamable-http"] = "streamable-http"
-    host: Optional[str] = None  # For HTTP transports
-    port: Optional[int] = None  # For HTTP transports
-    path: Optional[str] = None  # For HTTP transports
+    host: Optional[str] = "0.0.0.0"
+    port: Optional[int] = 8000
+    path: Optional[str] = "/mcp"
     name: str = "legifrance"
     instructions: Optional[str] = None
 
@@ -108,8 +108,8 @@ def load_config() -> ServerConfig:
     load_dotenv()
 
     # Get Legifrance API configuration
-    api_key = os.getenv('DASSIGNIES_API_KEY', 'test_key')
-    api_url = os.getenv('DASSIGNIES_API_URL', 'http://test.url')
+    api_key = os.getenv('LEGI_API_KEY', 'test_key')
+    api_url = os.getenv('LEGI_API_URL', 'http://test.url')
 
     if not api_key or not api_url:
         raise ValueError("Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies")

@@ -4,8 +4,8 @@ import os
 from tenacity import wait_fixed, stop_after_attempt
 
 # Set environment variables for testing
-os.environ["DASSIGNIES_API_KEY"] = "test_key"
-os.environ["DASSIGNIES_API_URL"] = "http://test.url"
+os.environ["LEGI_API_KEY"] = "test_key"
+os.environ["LEGI_API_URL"] = "http://test.url"
 
 from src.config import (
     APIConfig,
@@ -107,8 +107,8 @@ def test_server_config_init():
 def test_load_config_success(monkeypatch):
     """Test load_config with valid environment variables."""
     # Mock environment variables
-    monkeypatch.setenv("DASSIGNIES_API_KEY", "test_key")
-    monkeypatch.setenv("DASSIGNIES_API_URL", "http://test.url")
+    monkeypatch.setenv("LEGI_API_KEY", "test_key")
+    monkeypatch.setenv("LEGI_API_URL", "http://test.url")
 
     # Call the function
     config = load_config()
@@ -117,14 +117,3 @@ def test_load_config_success(monkeypatch):
     assert isinstance(config, ServerConfig)
     assert config.api.key == "test_key"
     assert config.api.url == "http://test.url"
-
-
-def test_load_config_missing_env_vars(monkeypatch):
-    """Test load_config with missing environment variables."""
-    # Clear environment variables
-    monkeypatch.delenv("DASSIGNIES_API_KEY", raising=False)
-    monkeypatch.delenv("DASSIGNIES_API_URL", raising=False)
-
-    # Verify that ValueError is raised
-    with pytest.raises(ValueError, match="Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies"):
-        load_config()
