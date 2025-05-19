@@ -22,9 +22,9 @@ import os
 import json
 import logging
 import asyncio
-from typing import Any, Dict, Optional, List, Sequence
-from functools import wraps
-from datetime import datetime
+from typing import Any, Dict, List, Sequence
+from tenacity import retry, wait_fixed, stop_after_attempt
+
 
 import requests
 from dotenv import load_dotenv
@@ -65,41 +65,6 @@ def clean_dict(d: dict) -> dict:
         dict: Dictionnaire sans les valeurs None
     """
     return {k: v for k, v in d.items() if v is not None}
-
-def rate_limit(calls: int, period: float):
-    """
-    Décorateur pour limiter le nombre d'appels API dans une période donnée.
-    
-    Args:
-        calls (int): Nombre maximum d'appels autorisés
-        period (float): Période en secondes
-    """
-    def decorator(func):
-        last_reset = datetime.now()
-        calls_made = 0
-
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            nonlocal last_reset, calls_made
-            now = datetime.now()
-
-            # Réinitialisation du compteur si la période est écoulée
-            if (now - last_reset).total_seconds() > period:
-                calls_made = 0
-                last_reset = now
-
-            # Si la limite est atteinte, attendre la fin de la période
-            if calls_made >= calls:
-                wait_time = period - (now - last_reset).total_seconds()
-                if wait_time > 0:
-                    await asyncio.sleep(wait_time)
-                    last_reset = datetime.now()
-                    calls_made = 0
-
-            calls_made += 1
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 async def make_api_request(endpoint: str, data: Dict) -> Dict:
     """
@@ -269,7 +234,7 @@ async def list_tools() -> List[Tool]:
     ]
 
 @server.call_tool()
-@rate_limit(calls=5, period=1.0)  # Limite à 5 appels par seconde
+@retry(wait=wait_fixed(1), stop=stop_after_attempt(5))
 async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
     """
     Gère les appels aux outils juridiques.
