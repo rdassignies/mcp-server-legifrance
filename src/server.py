@@ -10,41 +10,19 @@ Auteur: Raphaël d'Assignies (dassignies.law)
 Date de création: Avril 2025
 """
 
-import os
 import json
-import logging
 import asyncio
 from typing import Any, Dict, List, Sequence
-from tenacity import retry, wait_fixed, stop_after_attempt
+from tenacity import retry
 
 import requests
-from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 
-# Configuration du logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("legifrance_mcp")
+from config import config, logger
 
-# Chargement des variables d'environnement
-load_dotenv()
-
-# Constantes et configuration
-API_KEY = os.getenv('DASSIGNIES_API_KEY')
-API_URL = os.getenv('DASSIGNIES_API_URL')
-
-if not API_KEY or not API_URL:
-    raise ValueError("Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies")
-
-HEADERS = {
-    "accept": "*/*",
-    "Content-Type": "application/json"
-}
-
-# Création du serveur MCP
 server = Server("legifrance")
 
-# Utilitaires
 def clean_dict(d: dict) -> dict:
     """
     Supprime les clés dont la valeur est None pour optimiser les requêtes API.
@@ -69,17 +47,17 @@ async def make_api_request(endpoint: str, data: Dict) -> Dict:
         Dict: Résultat de la requête ou message d'erreur
     """
     try:
-        url = f"{API_URL}{endpoint}"
+        url = f"{config.api.url}{endpoint}"
         clean_data = clean_dict(data)
 
         logger.info(f"Envoi de requête à {endpoint} avec les données: {json.dumps(clean_data)}")
 
         res = requests.post(
             url,
-            headers=HEADERS,
-            params={"api_key": API_KEY},
+            headers=config.api.headers,
+            params={"api_key": config.api.key},
             json=clean_data,
-            timeout=30  # Timeout explicite pour éviter les blocages
+            timeout=config.api.timeout
         )
 
         content_type = res.headers.get("Content-Type", "")
@@ -223,7 +201,7 @@ async def list_tools() -> List[Tool]:
     ]
 
 @server.call_tool()
-@retry(wait=wait_fixed(1), stop=stop_after_attempt(5))
+@retry(wait=config.retry.wait, stop=config.retry.stop)
 async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
     """
     Gère les appels aux outils juridiques.
@@ -238,16 +216,9 @@ async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
     try:
         logger.info(f"Appel de l'outil: {name} avec arguments: {json.dumps(arguments)}")
 
-        if name not in ["rechercher_dans_texte_legal", "rechercher_code", "rechercher_jurisprudence_judiciaire"]:
-            raise ValueError(f"Outil inconnu: {name}")
+        config.endpoints.validate_tool_name(name)
 
-        endpoints = {
-            "rechercher_dans_texte_legal": "loda",
-            "rechercher_code": "code",
-            "rechercher_jurisprudence_judiciaire": "juri"
-        }
-
-        result = await make_api_request(endpoints[name], arguments)
+        result = await make_api_request(config.endpoints.get_endpoint(name), arguments)
 
         if isinstance(result, dict) and "error" in result:
             return [TextContent(type="text", text=result["error"])]
