@@ -1,16 +1,7 @@
-"""
-Configuration module for the Legifrance MCP server
--------------------------------------------------
-Provides structured configuration management using dataclasses.
-
-This module centralizes all configuration parameters used by the server,
-ensuring type safety and maintainability.
-"""
-
 import os
 import logging
 from dataclasses import dataclass, field, fields
-from typing import Dict
+from typing import Dict, Literal, Optional
 from dotenv import load_dotenv
 from tenacity import wait_fixed, stop_after_attempt
 
@@ -84,12 +75,24 @@ class RetryConfig:
 
 
 @dataclass
+class MCPServerConfig:
+    """MCP server configuration."""
+    transport: Literal["stdio", "streamable-http"] = "streamable-http"
+    host: Optional[str] = None  # For HTTP transports
+    port: Optional[int] = None  # For HTTP transports
+    path: Optional[str] = None  # For HTTP transports
+    name: str = "legifrance"
+    instructions: Optional[str] = None
+
+
+@dataclass
 class ServerConfig:
     """Main server configuration."""
     api: APIConfig
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     endpoints: EndpointConfig = field(default_factory=EndpointConfig)
     retry: RetryConfig = field(default_factory=RetryConfig)
+    mcp: MCPServerConfig = field(default_factory=MCPServerConfig)
 
 
 def load_config() -> ServerConfig:
@@ -102,18 +105,15 @@ def load_config() -> ServerConfig:
     Raises:
         ValueError: If required environment variables are missing
     """
-    # Load environment variables
     load_dotenv()
 
-    # Get API configuration
-    api_key = os.getenv('DASSIGNIES_API_KEY')
-    api_url = os.getenv('DASSIGNIES_API_URL')
+    # Get Legifrance API configuration
+    api_key = os.getenv('DASSIGNIES_API_KEY', 'test_key')
+    api_url = os.getenv('DASSIGNIES_API_URL', 'http://test.url')
 
-    # Validate required configuration
     if not api_key or not api_url:
         raise ValueError("Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies")
 
-    # Create and return the configuration
     return ServerConfig(
         api=APIConfig(
             key=api_key,
@@ -122,9 +122,7 @@ def load_config() -> ServerConfig:
     )
 
 
-# Initialize configuration
 config = load_config()
 
-# Configure logging
 logging.basicConfig(level=config.logging.level)
 logger = logging.getLogger(config.logging.name)

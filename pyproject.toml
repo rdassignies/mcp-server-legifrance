@@ -12,6 +12,7 @@ dependencies = [
     "requests>=2.32.3",
     "load-dotenv>=0.1.0",
     "tenacity>=9.1.2",
+    "fastmcp>=2.3.4",
 ]
 
 [dependency-groups]

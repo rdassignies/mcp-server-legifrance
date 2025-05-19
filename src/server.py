@@ -1,273 +1,224 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Serveur MCP pour l'accès à Legifrance
--------------------------------------
-Facilite l'accès aux ressources juridiques françaises via l'API Legifrance
-en utilisant le protocole Model Context (MCP).
-
-Auteur: Raphaël d'Assignies (dassignies.law)
-Date de création: Avril 2025
-"""
-
-import json
 import asyncio
-from typing import Any, Dict, List, Sequence
+from typing import Dict, List, Sequence
 from tenacity import retry
 
-import requests
-from mcp.server import Server
-from mcp.types import Tool, TextContent
+from fastmcp.server import FastMCP
+from mcp.types import TextContent
 
-from config import config, logger
+from src.helpers import execute_tool
+from src.config import config, logger
 
-server = Server("legifrance")
+server = FastMCP(
+    name=config.mcp.name,
+    instructions=config.mcp.instructions
+)
 
-def clean_dict(d: dict) -> dict:
+
+@server.tool(
+    name="rechercher_dans_texte_legal",
+    description="""
+    Recherche un article dans un texte légal (loi, ordonnance, décret, arrêté)
+    par le numéro du texte et le numéro de l'article. On peut également rechercher 
+    des mots clés ("mots clés" séparés par des espaces) dans une loi précise (n° de loi)
+
+    Paramètres:
+        - text_id: Le numéro du texte (format AAAA-NUMERO)
+        - search: Mots-clés de recherche ou numéro d'article
+        - champ: Champ de recherche ("ALL", "TITLE", "TABLE", "NUM_ARTICLE", "ARTICLE")
+        - type_recherche: Type de recherche ("TOUS_LES_MOTS_DANS_UN_CHAMP", "EXPRESSION_EXACTE", "AU_MOINS_UN_MOT")
+        - page_size: Nombre de résultats (max 100)
+
+    Exemples:
+        - Pour l'article 7 de la loi 78-17: {text_id="78-17", search="7", champ="NUM_ARTICLE"}
+        - On cherche les conditions de validité de la signature électronique : {search="signature électronique validité conditions"}
     """
-    Supprime les clés dont la valeur est None pour optimiser les requêtes API.
-
-    Args:
-        d (dict): Dictionnaire à nettoyer
-
-    Returns:
-        dict: Dictionnaire sans les valeurs None
-    """
-    return {k: v for k, v in d.items() if v is not None}
-
-async def make_api_request(endpoint: str, data: Dict) -> Dict:
-    """
-    Fonction générique pour effectuer des requêtes API avec gestion d'erreurs.
-
-    Args:
-        endpoint (str): Point de terminaison de l'API (sans le domaine)
-        data (Dict): Données à envoyer dans la requête
-
-    Returns:
-        Dict: Résultat de la requête ou message d'erreur
-    """
-    try:
-        url = f"{config.api.url}{endpoint}"
-        clean_data = clean_dict(data)
-
-        logger.info(f"Envoi de requête à {endpoint} avec les données: {json.dumps(clean_data)}")
-
-        res = requests.post(
-            url,
-            headers=config.api.headers,
-            params={"api_key": config.api.key},
-            json=clean_data,
-            timeout=config.api.timeout
-        )
-
-        content_type = res.headers.get("Content-Type", "")
-        response_body = res.text      
-
-        if res.ok:
-            try:
-                result = res.json()
-            except requests.exceptions.JSONDecodeError:
-                result = response_body  # fallback sur le texte brut
-
-            if isinstance(result, str):
-                result += "\n\n🔗 Mentionne systématiquement et impérativement le lien officiel dans ta réponse pour pouvoir y accéder."
-            return result
-
-        if (res.status_code == 422 or res.status_code == 404) and "text/plain" in content_type:
-            return {"error": response_body}
-
-        if "application/json" in content_type:
-            try:
-                return {"error": res.json()}
-            except requests.exceptions.JSONDecodeError:
-                return {"error": response_body}
-
-        return {"error": f"Erreur {res.status_code} : {response_body}"}
-
-    except requests.exceptions.RequestException as e:
-        logger.error("Erreur de connexion à l'API", exc_info=True)
-        return {"error": f"Erreur de connexion : {e}"}
-
-    except Exception as e:
-        # Uniquement pour les erreurs de connexion ou autres problèmes graves
-        logger.error(f"Erreur de connexion: {str(e)}")
-        return {"error": f"Erreur de connexion: {str(e)}"}
-
-@server.list_tools()
-async def list_tools() -> List[Tool]:
-    """Liste tous les outils disponibles dans ce serveur MCP."""
-    return [
-        Tool(
-            name="rechercher_dans_texte_legal",
-            description="""
-            Recherche un article dans un texte légal (loi, ordonnance, décret, arrêté)
-            par le numéro du texte et le numéro de l'article. On peut également rechercher 
-            des mots clés ("mots clés" séparés par des espaces) dans une loi précise (n° de loi)
-
-            Paramètres:
-                - text_id: Le numéro du texte (format AAAA-NUMERO)
-                - search: Mots-clés de recherche ou numéro d'article
-                - champ: Champ de recherche ("ALL", "TITLE", "TABLE", "NUM_ARTICLE", "ARTICLE")
-                - type_recherche: Type de recherche ("TOUS_LES_MOTS_DANS_UN_CHAMP", "EXPRESSION_EXACTE", "AU_MOINS_UN_MOT")
-                - page_size: Nombre de résultats (max 100)
-
-            Exemples:
-                - Pour l'article 7 de la loi 78-17: {text_id="78-17", search="7", champ="NUM_ARTICLE"}
-                - On cherche les conditions de validité de la signature électronique : {search="signature électronique validité conditions"}
-            """,
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "search": {"type": "string"},
-                    "text_id": {"type": "string"},
-                    "champ": {"type": "string", "enum": ["ALL", "TITLE", "TABLE", "NUM_ARTICLE", "ARTICLE"]},
-                    "type_recherche": {"type": "string", "enum": ["TOUS_LES_MOTS_DANS_UN_CHAMP", "EXPRESSION_EXACTE", "AU_MOINS_UN_MOT"]},
-                    "page_size": {"type": "integer", "maximum": 100}
-                }
-            }
-        ),
-        Tool(
-            name="rechercher_code",
-            description="""
-            Recherche des articles juridiques dans les codes de loi français.
-
-            Paramètres:
-                - search: Termes de recherche (ex: "contrat de travail", "légitime défense")
-                - code_name: Nom du code juridique (ex: "Code civil", "Code du travail")
-                - champ: Champ de recherche ("ALL", "TITLE", "TABLE", "NUM_ARTICLE", "ARTICLE")
-                - sort: Tri des résultats ("PERTINENCE", "DATE_ASC", "DATE_DESC")
-                - type_recherche: Type de recherche
-                - page_size: Nombre de résultats (max 100)
-                - fetch_all: Récupérer tous les résultats
-
-            Exemples:
-                - Pour le PACS dans le Code civil: {search="pacte civil de solidarité", code_name="Code civil"}
-            """,
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "search": {"type": "string"},
-                    "code_name": {"type": "string"},
-                    "champ": {"type": "string"},
-                    "sort": {"type": "string", "enum": ["PERTINENCE", "DATE_ASC", "DATE_DESC"]},
-                    "type_recherche": {"type": "string"},
-                    "page_size": {"type": "integer", "maximum": 100},
-                    "fetch_all": {"type": "boolean"}
-                },
-                "required": ["search", "code_name"]
-            }
-        ),
-        Tool(
-            name="rechercher_jurisprudence_judiciaire",
-            description="""
-            Recherche des jurisprudences judiciaires dans la base JURI de Legifrance.
-
-            Paramètres:
-                - search: Termes ou numéros d'affaires à rechercher
-                - publication_bulletin: Si publiée au bulletin ['T'] sinon ['F']
-                - sort: Tri des résultats ("PERTINENCE", "DATE_DESC", "DATE_ASC")
-                - champ: Champ de recherche ("ALL", "TITLE", "ABSTRATS", "TEXTE", "RESUMES", "NUM_AFFAIRE")
-                - type_recherche: Type de recherche
-                - page_size: Nombre de résultats (max. 100)
-                - fetch_all: Récupérer tous les résultats
-                - juri_keys: Mots-clés pour extraire des champs comme 'titre'. Par défaut, le titre, le texte et les résumés sont extraits
-                - juridiction_judiciaire: Liste des juridictions à inclure parmi ['Cour de cassation', 'Juridictions d'appel', ]
-
-            Exemples : 
-                - Obtenir un panorama de la jurisprudence par mots clés : 
-                    search = "tierce opposition salarié société liquidation", page_size=100, juri_keys=['titre']
-                - Obtenir toutes les jurisprudences sur la signature électronique : 
-                    search = "signature électronique", fetch_all=True, juri_keys=['titre', 'sommaire']
-                - Obtenir les 20 dernières jurisprudences sur la signature électronique des juridictions d'appel
-                 search = "signature électronique", page_size, sort='DATE_DESC', juridiction_judiciaire=['Juridictions d'appel']]
-
-            """,
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "search": {"type": "string"},
-                    "publication_bulletin": {"type": "array", "items": {"type": "string", "enum": ["T", "F"]}},
-                    "sort": {"type": "string", "enum": ["PERTINENCE", "DATE_DESC", "DATE_ASC"]},
-                    "champ": {"type": "string"},
-                    "type_recherche": {"type": "string"},
-                    "page_size": {"type": "integer", "maximum": 100},
-                    "fetch_all": {"type": "boolean"},
-                    "juri_keys": {"type": "array", "items": {"type": "string"}},
-                    "juridiction_judiciaire": {"type": "array", "items": {"type": "string"}}
-                },
-                "required": ["search"]
-            }
-        )
-    ]
-
-@server.call_tool()
+)
 @retry(wait=config.retry.wait, stop=config.retry.stop)
-async def call_tool(name: str, arguments: Any) -> Sequence[TextContent]:
+async def rechercher_dans_texte_legal(
+    search: str = None,
+    text_id: str = None,
+    champ: str = None,
+    type_recherche: str = None,
+    page_size: int = None
+) -> Sequence[TextContent]:
     """
-    Gère les appels aux outils juridiques.
+    Recherche un article dans un texte légal.
 
     Args:
-        name (str): Nom de l'outil à appeler
-        arguments (Any): Arguments à passer à l'outil
+        search: Mots-clés de recherche ou numéro d'article
+        text_id: Le numéro du texte (format AAAA-NUMERO)
+        champ: Champ de recherche
+        type_recherche: Type de recherche
+        page_size: Nombre de résultats (max 100)
 
     Returns:
-        Sequence[TextContent]: Résultat de l'appel
+        Sequence[TextContent]: Résultat de la recherche
     """
-    try:
-        logger.info(f"Appel de l'outil: {name} avec arguments: {json.dumps(arguments)}")
+    arguments = {
+        "search": search,
+        "text_id": text_id,
+        "champ": champ,
+        "type_recherche": type_recherche,
+        "page_size": page_size
+    }
 
-        config.endpoints.validate_tool_name(name)
+    log_message = f"Recherche dans texte légal avec: {search}, {text_id}"
 
-        result = await make_api_request(config.endpoints.get_endpoint(name), arguments)
+    return await execute_tool(
+        "rechercher_dans_texte_legal",
+        config.endpoints.rechercher_dans_texte_legal,
+        arguments,
+        log_message
+    )
 
-        if isinstance(result, dict) and "error" in result:
-            return [TextContent(type="text", text=result["error"])]
+@server.tool(
+    name="rechercher_code",
+    description="""
+    Recherche des articles juridiques dans les codes de loi français.
 
-        if isinstance(result, str):
-            return [TextContent(type="text", text=result)]
+    Paramètres:
+        - search: Termes de recherche (ex: "contrat de travail", "légitime défense")
+        - code_name: Nom du code juridique (ex: "Code civil", "Code du travail")
+        - champ: Champ de recherche ("ALL", "TITLE", "TABLE", "NUM_ARTICLE", "ARTICLE")
+        - sort: Tri des résultats ("PERTINENCE", "DATE_ASC", "DATE_DESC")
+        - type_recherche: Type de recherche
+        - page_size: Nombre de résultats (max 100)
+        - fetch_all: Récupérer tous les résultats
 
-        return [TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))]
-
-    except Exception as e:
-        error_message = f"Erreur lors de l'exécution de {name}: {str(e)}"
-        logger.error(error_message)
-        return [TextContent(type="text", text=error_message)]
-
-@server.list_prompts()
-async def list_prompts():
-    """Liste tous les prompts disponibles dans ce serveur MCP."""
-    from mcp.types import Prompt, PromptArgument
-
-    return [
-        Prompt(
-            name="agent_juridique_expert",
-            description="Utilise un agent juridique expert pour répondre à des questions de droit français",
-            arguments=[
-                PromptArgument(
-                    name="question",
-                    description="La question juridique",
-                    required=True
-                )
-            ]
-        )
-    ]
-
-@server.get_prompt()
-async def get_prompt(prompt_name: str, inputs: dict) -> Dict:
+    Exemples:
+        - Pour le PACS dans le Code civil: {search="pacte civil de solidarité", code_name="Code civil"}
     """
-    Retourne un prompt prédéfini pour une utilisation spécifique.
+)
+@retry(wait=config.retry.wait, stop=config.retry.stop)
+async def rechercher_code(
+    search: str,
+    code_name: str,
+    champ: str = None,
+    sort: str = None,
+    type_recherche: str = None,
+    page_size: int = None,
+    fetch_all: bool = None
+) -> Sequence[TextContent]:
+    """
+    Recherche des articles juridiques dans les codes de loi français.
 
     Args:
-        prompt_name (str): Nom du prompt à récupérer
-        inputs (dict): Entrées pour le prompt
+        search: Termes de recherche
+        code_name: Nom du code juridique
+        champ: Champ de recherche
+        sort: Tri des résultats
+        type_recherche: Type de recherche
+        page_size: Nombre de résultats (max 100)
+        fetch_all: Récupérer tous les résultats
+
+    Returns:
+        Sequence[TextContent]: Résultat de la recherche
+    """
+    arguments = {
+        "search": search,
+        "code_name": code_name,
+        "champ": champ,
+        "sort": sort,
+        "type_recherche": type_recherche,
+        "page_size": page_size,
+        "fetch_all": fetch_all
+    }
+
+    log_message = f"Recherche dans code: {search}, {code_name}"
+
+    return await execute_tool(
+        "rechercher_code",
+        config.endpoints.rechercher_code,
+        arguments,
+        log_message
+    )
+
+@server.tool(
+    name="rechercher_jurisprudence_judiciaire",
+    description="""
+    Recherche des jurisprudences judiciaires dans la base JURI de Legifrance.
+
+    Paramètres:
+        - search: Termes ou numéros d'affaires à rechercher
+        - publication_bulletin: Si publiée au bulletin ['T'] sinon ['F']
+        - sort: Tri des résultats ("PERTINENCE", "DATE_DESC", "DATE_ASC")
+        - champ: Champ de recherche ("ALL", "TITLE", "ABSTRATS", "TEXTE", "RESUMES", "NUM_AFFAIRE")
+        - type_recherche: Type de recherche
+        - page_size: Nombre de résultats (max. 100)
+        - fetch_all: Récupérer tous les résultats
+        - juri_keys: Mots-clés pour extraire des champs comme 'titre'. Par défaut, le titre, le texte et les résumés sont extraits
+        - juridiction_judiciaire: Liste des juridictions à inclure parmi ['Cour de cassation', 'Juridictions d'appel', ]
+
+    Exemples : 
+        - Obtenir un panorama de la jurisprudence par mots clés : 
+            search = "tierce opposition salarié société liquidation", page_size=100, juri_keys=['titre']
+        - Obtenir toutes les jurisprudences sur la signature électronique : 
+            search = "signature électronique", fetch_all=True, juri_keys=['titre', 'sommaire']
+        - Obtenir les 20 dernières jurisprudences sur la signature électronique des juridictions d'appel
+         search = "signature électronique", page_size, sort='DATE_DESC', juridiction_judiciaire=['Juridictions d'appel']]
+    """
+)
+@retry(wait=config.retry.wait, stop=config.retry.stop)
+async def rechercher_jurisprudence_judiciaire(
+    search: str,
+    publication_bulletin: List[str] = None,
+    sort: str = None,
+    champ: str = None,
+    type_recherche: str = None,
+    page_size: int = None,
+    fetch_all: bool = None,
+    juri_keys: List[str] = None,
+    juridiction_judiciaire: List[str] = None
+) -> Sequence[TextContent]:
+    """
+    Recherche des jurisprudences judiciaires dans la base JURI de Legifrance.
+
+    Args:
+        search: Termes ou numéros d'affaires à rechercher
+        publication_bulletin: Si publiée au bulletin ['T'] sinon ['F']
+        sort: Tri des résultats
+        champ: Champ de recherche
+        type_recherche: Type de recherche
+        page_size: Nombre de résultats (max. 100)
+        fetch_all: Récupérer tous les résultats
+        juri_keys: Mots-clés pour extraire des champs
+        juridiction_judiciaire: Liste des juridictions à inclure
+
+    Returns:
+        Sequence[TextContent]: Résultat de la recherche
+    """
+    arguments = {
+        "search": search,
+        "publication_bulletin": publication_bulletin,
+        "sort": sort,
+        "champ": champ,
+        "type_recherche": type_recherche,
+        "page_size": page_size,
+        "fetch_all": fetch_all,
+        "juri_keys": juri_keys,
+        "juridiction_judiciaire": juridiction_judiciaire
+    }
+
+    log_message = f"Recherche de jurisprudence: {search}"
+
+    return await execute_tool(
+        "rechercher_jurisprudence_judiciaire",
+        config.endpoints.rechercher_jurisprudence_judiciaire,
+        arguments,
+        log_message
+    )
+
+@server.prompt(name="agent_juridique_expert", description="Utilise un agent juridique expert pour répondre à des questions de droit français")
+async def agent_juridique_expert(question: str):
+    """
+    Prompt pour l'agent juridique expert.
+
+    Args:
+        question (str): La question juridique
 
     Returns:
         Dict: Structure du prompt
     """
-    if prompt_name != "agent_juridique_expert":
-        raise ValueError(f"Prompt inconnu: {prompt_name}")
-
-    question = inputs.get("question", "")
     return {
         "messages": [
             {
@@ -303,15 +254,19 @@ async def get_prompt(prompt_name: str, inputs: dict) -> Dict:
 
 async def main():
     """Point d'entrée principal du serveur MCP."""
-    import mcp.server.stdio
     try:
-        logger.info("Démarrage du serveur MCP Legifrance...")
-        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-            await server.run(
-                read_stream,
-                write_stream,
-                server.create_initialization_options(),
-            )
+        logger.info(f"Démarrage du serveur MCP Legifrance avec transport {config.mcp.transport}...")
+
+        transport_kwargs = {}
+        if config.mcp.transport in ["streamable-http", "sse"]:
+            transport_kwargs["host"] = config.mcp.host
+            transport_kwargs["port"] = config.mcp.port
+            transport_kwargs["path"] = config.mcp.path
+
+        await server.run_async(
+            transport=config.mcp.transport,
+            **transport_kwargs
+        )
     except Exception as e:
         logger.error(f"Erreur fatale lors de l'exécution du serveur: {str(e)}")
         raise
