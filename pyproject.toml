@@ -13,6 +13,7 @@ dependencies = [
     "tenacity>=9.1.2",
     "fastmcp>=2.3.4",
     "mcp>=1.9.0",
+    "mcpo>=0.0.14",
 ]
 
 [dependency-groups]

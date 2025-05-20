@@ -270,7 +270,7 @@ async def main():
         logger.info(f"Démarrage du serveur MCP Legifrance avec transport {config.mcp.transport}...")
 
         transport_kwargs = {}
-        if config.mcp.transport in ["streamable-http", "sse"]:
+        if config.mcp.transport in ["streamable-http"]:
             transport_kwargs["host"] = config.mcp.host
             transport_kwargs["port"] = config.mcp.port
             transport_kwargs["path"] = config.mcp.path

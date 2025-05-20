@@ -77,7 +77,7 @@ class RetryConfig:
 @dataclass
 class MCPServerConfig:
     """MCP server configuration."""
-    transport: Literal["stdio", "streamable-http"] = "streamable-http"
+    transport: Literal["stdio", "streamable-http"] = "stdio"
     host: Optional[str] = "0.0.0.0"
     port: Optional[int] = 8000
     path: Optional[str] = "/mcp"
