@@ -108,11 +108,11 @@ def load_config() -> ServerConfig:
     load_dotenv()
 
     # Get Legifrance API configuration
-    api_key = os.getenv('LEGI_API_KEY', 'test_key')
-    api_url = os.getenv('LEGI_API_URL', 'http://test.url')
+    api_key = os.getenv('LEGI_API_KEY')
+    api_url = os.getenv('LEGI_API_URL')
 
     if not api_key or not api_url:
-        raise ValueError("Les variables d'environnement LAB_DASSIGNIES_API_KEY et LEGAL_API_URL doivent être définies")
+        raise ValueError("Les variables d'environnement LEGI_API_KEY et LEGI_API_URL doivent être définies")
 
     return ServerConfig(
         api=APIConfig(
