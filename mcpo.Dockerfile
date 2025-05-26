@@ -27,6 +27,7 @@ RUN which mcpo
 
 EXPOSE 8000
 
+ENV MCP_TRANSPORT=stdio
 ENTRYPOINT ["mcpo"]
 
 CMD ["--host", "0.0.0.0", "--port", "8000", "--", "uv", "run", "python", "-m", "src.server"]

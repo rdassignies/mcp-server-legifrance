@@ -26,4 +26,5 @@ COPY --from=uv /app/src /app/src
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+ENV MCP_TRANSPORT=streamable-http
 ENTRYPOINT ["python", "-m", "src.server"]

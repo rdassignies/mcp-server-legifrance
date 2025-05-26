@@ -114,10 +114,16 @@ def load_config() -> ServerConfig:
     if not api_key or not api_url:
         raise ValueError("Les variables d'environnement LEGI_API_KEY et LEGI_API_URL doivent être définies")
 
+    # Get MCP server configuration
+    mcp_transport = os.getenv('MCP_TRANSPORT', 'stdio')
+
     return ServerConfig(
         api=APIConfig(
             key=api_key,
             url=api_url
+        ),
+        mcp=MCPServerConfig(
+            transport=mcp_transport
         )
     )
 
