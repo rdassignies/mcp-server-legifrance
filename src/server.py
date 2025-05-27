@@ -9,21 +9,15 @@ from starlette.responses import JSONResponse
 
 from src.helpers import execute_tool
 from src.config import config, logger
+from src.health import register_ping_endpoint
 
 server = FastMCP(
     name=config.mcp.name,
     instructions=config.mcp.instructions
 )
 
-@server.custom_route("/ping", methods=["GET"])
-async def ping(request: Request) -> JSONResponse:
-    """
-    Simple health check endpoint that returns a 200 OK response.
-
-    Returns:
-        JSONResponse: A JSON response with status "ok"
-    """
-    return JSONResponse({"status": "ok"})
+# Register the ping endpoint and apply the logging filter
+register_ping_endpoint(server)
 
 
 @server.tool(
