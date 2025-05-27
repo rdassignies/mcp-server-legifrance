@@ -77,7 +77,7 @@ class RetryConfig:
 @dataclass
 class MCPServerConfig:
     """MCP server configuration."""
-    transport: Literal["stdio", "streamable-http"] = "stdio"
+    transport: Literal["stdio", "streamable-http"] = "streamable-http"
     host: Optional[str] = "0.0.0.0"
     port: Optional[int] = 8000
     path: Optional[str] = "/mcp"
@@ -114,16 +114,16 @@ def load_config() -> ServerConfig:
     if not api_key or not api_url:
         raise ValueError("Les variables d'environnement LEGI_API_KEY et LEGI_API_URL doivent être définies")
 
-    # Get MCP server configuration
-    mcp_transport = os.getenv('MCP_TRANSPORT', 'stdio')
-
     return ServerConfig(
         api=APIConfig(
             key=api_key,
             url=api_url
         ),
         mcp=MCPServerConfig(
-            transport=mcp_transport
+            transport=os.getenv('MCP_TRANSPORT', 'streamable-http'),
+            host=os.getenv('MCP_HOST', '0.0.0.0'),
+            port=int(os.getenv('MCP_PORT', '8000')),
+            path=os.getenv('MCP_PATH', '/mcp')
         )
     )
 
