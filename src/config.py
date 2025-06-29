@@ -120,10 +120,10 @@ def load_config() -> ServerConfig:
             url=api_url
         ),
         mcp=MCPServerConfig(
-            transport=os.getenv('MCP_TRANSPORT', 'streamable-http'),
+            transport=os.getenv('MCP_TRANSPORT', 'sse'),
             host=os.getenv('MCP_HOST', '0.0.0.0'),
             port=int(os.getenv('MCP_PORT', '8000')),
-            path=os.getenv('MCP_PATH', '/mcp')
+            path=os.getenv('MCP_PATH', '/sse')
         )
     )
 

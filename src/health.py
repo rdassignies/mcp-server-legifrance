@@ -3,44 +3,41 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from src.config import logger
 
-# Create a filter to exclude /ping endpoint from logging
+
 class ExcludePingFilter(logging.Filter):
-    """
-    A logging filter that excludes log messages related to the /ping endpoint.
+    """Filtre qui exclut les logs contenant /ping."""
 
-    This filter is used to prevent the health check endpoint from cluttering
-    application logs, as recommended in the FastAPI documentation:
-    https://fastapi.tiangolo.com/advanced/middleware/
-    """
     def filter(self, record):
-        # Check if the log record contains information about the /ping endpoint
-        return "/ping" not in getattr(record, "message", "")
+        return "/ping" not in str(record.getMessage())
 
-# Function to register the ping endpoint with the server
+
 def register_ping_endpoint(server):
-    """
-    Register the ping endpoint with the server and apply the logging filter.
-    
+    """Enregistre le point de terminaison ping avec le serveur et applique le filtre de journalisation.
+
     Args:
-        server: The FastMCP server instance
+        server: L'instance du serveur FastMCP.
     """
-    # Apply the filter to the logger to exclude /ping endpoint logs
+    # Applique le filtre au logger pour exclure les logs du point de terminaison /ping
     logger.addFilter(ExcludePingFilter())
-    
+
+    # Applique également le filtre au logger uvicorn pour supprimer les logs HTTP
+    uvicorn_logger = logging.getLogger("uvicorn.access")
+    uvicorn_logger.addFilter(ExcludePingFilter())
+
     @server.custom_route("/ping", methods=["GET"])
     async def ping(request: Request) -> JSONResponse:
-        """
-        Simple health check endpoint that returns a 200 OK response.
-        
-        This endpoint is excluded from logging using a custom logging filter
-        to prevent cluttering application logs with health check requests.
-        
-        For more information on filtering logs in Python, see:
-        https://docs.python.org/3/howto/logging-cookbook.html#using-filters-to-impart-contextual-information
-        
+        """Point de terminaison simple de vérification d'état qui retourne une réponse 200 OK.
+
+        Ce point de terminaison est exclu de la journalisation en utilisant un filtre
+        personnalisé pour éviter d'encombrer les journaux d'application avec les requêtes
+        de vérification d'état.
+
         Returns:
-            JSONResponse: A JSON response with status "ok"
+            Une réponse JSON avec le statut "ok".
+
+        Reference:
+            https://docs.python.org/3/howto/logging-cookbook.html#using-filters-to-impart-contextual-information
         """
         return JSONResponse({"status": "ok"})
-    
+
     return ping
