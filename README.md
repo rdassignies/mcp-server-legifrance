@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/pylegifrance-mcp-server-legifrance-badge.png)](https://mseep.ai/app/pylegifrance-mcp-server-legifrance)
+
 # mcp-server-legifrance
 
 Serveur MCP [Model Context Protocol](https://modelcontextprotocol.io/introduction) expérimental permettant d'interroger les bases juridiques françaises via l'API Legifrance dans des LLMs compatibles comme Claude.
